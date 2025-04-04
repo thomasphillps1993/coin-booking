@@ -15,24 +15,34 @@ public class CountryDAO {
         }
         return -1;
     }
-
-    public int addCountry(Country country) throws Exception {
-        int existingId = getCountryIdByName(country.getName());
-        if (existingId != -1) {
-            return existingId;
-        }
-
+    public int addCountry(String name, int yearEstablished, int population) throws Exception {
+        // First, check if the country already exists in the database
+        String checkQuery = "SELECT id FROM countries WHERE name = ?";
         Connection conn = DBConnection.getConnection();
-        PreparedStatement stmt = conn.prepareStatement("INSERT INTO countries (name, population) VALUES (?, ?)", Statement.RETURN_GENERATED_KEYS);
-        stmt.setString(1, country.getName());
-        stmt.setInt(2, country.getPopulation());
-        stmt.executeUpdate();
+        PreparedStatement checkStmt = conn.prepareStatement(checkQuery);
+        checkStmt.setString(1, name);
+        ResultSet rs = checkStmt.executeQuery();
 
-        ResultSet keys = stmt.getGeneratedKeys();
-        if (keys.next()) {
-            return keys.getInt(1);
+        if (rs.next()) {
+            // If country exists, return the existing country ID
+            return rs.getInt("id");
+        } else {
+            // If country doesn't exist, insert a new country
+            String insertQuery = "INSERT INTO countries (name, year_established, population) VALUES (?, ?, ?)";
+            PreparedStatement insertStmt = conn.prepareStatement(insertQuery, Statement.RETURN_GENERATED_KEYS);
+            insertStmt.setString(1, name);
+            insertStmt.setInt(2, yearEstablished);
+            insertStmt.setInt(3, population);
+            insertStmt.executeUpdate();
+
+            // Get the newly inserted country ID
+            ResultSet generatedKeys = insertStmt.getGeneratedKeys();
+            if (generatedKeys.next()) {
+                return generatedKeys.getInt(1);  // Return the generated ID
+            } else {
+                throw new SQLException("Failed to insert country, no ID obtained.");
+            }
         }
-        return -1;
     }
 
 }
