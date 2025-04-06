@@ -1,8 +1,11 @@
 package dao;
 
+import models.Coin;
 import models.Country;
 import utils.DBConnection;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CountryDAO {
     public int getCountryIdByName(String name) throws Exception {
@@ -43,6 +46,26 @@ public class CountryDAO {
                 throw new SQLException("Failed to insert country, no ID obtained.");
             }
         }
+    }
+
+    public List<Country> getAllCountries() throws SQLException {
+        List<Country> countries = new ArrayList<>();
+        String query = "SELECT * FROM countries";
+    
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+    
+            while (rs.next()) {
+                countries.add(new Country(
+                    rs.getString("name"),
+                    rs.getInt("year_established"),
+                    rs.getInt("population")
+                ));
+            }
+        }
+    
+        return countries;
     }
 
 }

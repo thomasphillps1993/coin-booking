@@ -3,11 +3,14 @@ package dao;
 import models.Coin;
 import utils.DBConnection;
 import java.sql.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class CoinDAO {
     public int getCoinId(String name, int year, int countryId) throws Exception {
         Connection conn = DBConnection.getConnection();
-        PreparedStatement stmt = conn.prepareStatement("SELECT id FROM coins WHERE name = ? AND year = ? AND country_id = ?");
+        PreparedStatement stmt = conn
+                .prepareStatement("SELECT id FROM coins WHERE name = ? AND year = ? AND country_id = ?");
         stmt.setString(1, name);
         stmt.setInt(2, year);
         stmt.setInt(3, countryId);
@@ -26,9 +29,8 @@ public class CoinDAO {
 
         Connection conn = DBConnection.getConnection();
         PreparedStatement stmt = conn.prepareStatement(
-            "INSERT INTO coins (name, year, value, user_id, country_id) VALUES (?, ?, ?, ?, ?)",
-            Statement.RETURN_GENERATED_KEYS
-        );
+                "INSERT INTO coins (name, year, value, user_id, country_id) VALUES (?, ?, ?, ?, ?)",
+                Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, coin.getName());
         stmt.setInt(2, coin.getYear());
         stmt.setDouble(3, coin.getValue());
@@ -42,4 +44,46 @@ public class CoinDAO {
         }
         return -1;
     }
+
+    public List<Coin> getCoinsByUserId(int userId) throws SQLException {
+        List<Coin> coins = new ArrayList<>();
+        String query = "SELECT name, year, value FROM coins WHERE user_id = ?";
+        Connection conn = DBConnection.getConnection();
+        PreparedStatement stmt = conn.prepareStatement(query);
+        stmt.setInt(1, userId);
+        ResultSet rs = stmt.executeQuery();
+
+        while (rs.next()) {
+            coins.add(new Coin(
+                    rs.getString("name"),
+                    rs.getInt("year"),
+                    rs.getDouble("value"),
+                    userId,
+                    -1 // countryId not needed for this view
+            ));
+        }
+        return coins;
+    }
+    public List<Coin> getAllCoins() throws SQLException {
+        List<Coin> coins = new ArrayList<>();
+        String query = "SELECT * FROM coins";
+    
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+    
+            while (rs.next()) {
+                coins.add(new Coin(
+                    rs.getString("name"),
+                    rs.getInt("year"),
+                    rs.getDouble("value"),
+                    rs.getInt("user_id"),
+                    rs.getInt("country_id")
+                ));
+            }
+        }
+    
+        return coins;
+    }
+    
 }
